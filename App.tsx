@@ -1,4 +1,15 @@
+import type { Tab, Task, Subject } from "./src/types";
+import { colors } from "./src/constants/colors";
 import React, { useEffect, useMemo, useState } from "react";
+import Field from "./src/components/Field";
+import PreparationScreen from "./src/screens/PreparationScreen";
+import SmallButton from "./src/components/SmallButton";
+import Header from "./src/components/Header";
+import ScheduleScreen from "./src/screens/ScheduleScreen";
+import TaskCard from "./src/components/TaskCard";
+import TasksScreen from "./src/screens/TasksScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
+import HomeScreen from "./src/screens/HomeScreen";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -18,67 +29,7 @@ import {
   Alert,
   Switch,
 } from "react-native";
-
-type Tab = "Home" | "Schedule" | "Preparation" | "Tasks" | "Profile";
-
-type Task = {
-  id: number;
-  title: string;
-  subject: string;
-  due: string;
-  status: "Pending" | "In Progress" | "Completed";
-};
-
-type Subject = {
-  id: number;
-  name: string;
-  code: string;
-  section: string;
-  room: string;
-};
-
-const green = "#52765D";
-const pale = "#DCE8D9";
-const cream = "#F7F5EF";
-const ink = "#28352D";
-const muted = "#758078";
-const line = "#E8E6DE";
-
-// Keep Field outside App so typing does not recreate the input component.
-const Field = ({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  placeholder: string;
-}) => (
-  <View style={{ marginBottom: 12 }}>
-    <Text style={{ color: ink, fontWeight: "600", fontSize: 12 }}>
-      {label}
-    </Text>
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor="#9BA39C"
-      autoCapitalize="none"
-      style={{
-        backgroundColor: "#FFFFFF",
-        borderWidth: 1,
-        borderColor: line,
-        borderRadius: 10,
-        paddingHorizontal: 12,
-        paddingVertical: 11,
-        color: ink,
-        marginTop: 6,
-      }}
-    />
-  </View>
-);
+const { green, pale, cream, ink, muted, line } = colors;
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -326,794 +277,6 @@ export default function App() {
     marginBottom: 12,
   } as const;
 
-  const SmallButton = ({
-    label,
-    onPress,
-    secondary = false,
-  }: {
-    label: string;
-    onPress: () => void;
-    secondary?: boolean;
-  }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        backgroundColor: secondary ? "#FFFFFF" : green,
-        borderColor: secondary ? line : green,
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        alignItems: "center",
-        flex: 1,
-      }}
-    >
-      <Text
-        style={{
-          color: secondary ? green : "#FFFFFF",
-          fontWeight: "600",
-          fontSize: 12,
-        }}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const Header = ({
-    title,
-    subtitle,
-  }: {
-    title: string;
-    subtitle?: string;
-  }) => (
-    <View style={{ marginBottom: 18 }}>
-      <Text style={{ color: ink, fontSize: 25, fontWeight: "700" }}>
-        {title}
-      </Text>
-      {!!subtitle && (
-        <Text style={{ color: muted, marginTop: 4, fontSize: 12 }}>
-          {subtitle}
-        </Text>
-      )}
-    </View>
-  );
-
-  const TaskCard = ({ task }: { task: Task }) => (
-    <View style={card}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
-      >
-        <View style={{ flex: 1, paddingRight: 8 }}>
-          <Text style={{ color: ink, fontWeight: "700", fontSize: 14 }}>
-            {task.title}
-          </Text>
-          <Text style={{ color: muted, fontSize: 11, marginTop: 5 }}>
-            {task.subject}
-          </Text>
-          <Text
-            style={{
-              color:
-                task.status === "Completed"
-                  ? green
-                  : task.due.toLowerCase().includes("today")
-                    ? "#B45C4B"
-                    : muted,
-              fontSize: 11,
-              marginTop: 7,
-            }}
-          >
-            ◷ {task.due}
-          </Text>
-        </View>
-
-        <View
-          style={{
-            backgroundColor:
-              task.status === "Completed"
-                ? pale
-                : task.status === "In Progress"
-                  ? "#F6E7CE"
-                  : "#F5DEDA",
-            borderRadius: 8,
-            paddingHorizontal: 8,
-            paddingVertical: 5,
-          }}
-        >
-          <Text
-            style={{
-              color:
-                task.status === "Completed"
-                  ? green
-                  : task.status === "In Progress"
-                    ? "#95672D"
-                    : "#A64F43",
-              fontSize: 10,
-              fontWeight: "700",
-            }}
-          >
-            {task.status}
-          </Text>
-        </View>
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-        {task.status !== "Completed" && (
-          <SmallButton
-            label={task.status === "Pending" ? "Start task" : "Mark complete"}
-            onPress={() =>
-              setTasks((oldTasks) =>
-                oldTasks.map((item) =>
-                  item.id === task.id
-                    ? {
-                        ...item,
-                        status:
-                          item.status === "Pending"
-                            ? "In Progress"
-                            : "Completed",
-                      }
-                    : item
-                )
-              )
-            }
-          />
-        )}
-
-        <SmallButton
-          label="Delete"
-          secondary
-          onPress={() =>
-            Alert.alert("Delete task", "Delete this task?", [
-              { text: "Cancel", style: "cancel" },
-              {
-                text: "Delete",
-                style: "destructive",
-                onPress: () =>
-                  setTasks((oldTasks) =>
-                    oldTasks.filter((item) => item.id !== task.id)
-                  ),
-              },
-            ])
-          }
-        />
-      </View>
-    </View>
-  );
-
-  const renderHome = () => (
-    <>
-      <Header
-        title={`Good morning, ${teacherName.split(" ")[0]}!`}
-        subtitle="Monday, October 19, 2026 · Your teaching workspace"
-      />
-
-      <View style={{ flexDirection: "row", gap: 10, marginBottom: 12 }}>
-        {[
-          { n: String(subjects.length), label: "Subjects", icon: "▤" },
-          { n: "3", label: "Lessons to prepare", icon: "▱" },
-          { n: String(pendingCount), label: "Pending tasks", icon: "☷" },
-        ].map((item, index) => (
-          <View
-            key={index}
-            style={{
-              flex: 1,
-              backgroundColor: "#FFFFFF",
-              borderRadius: 14,
-              padding: 12,
-              borderColor: line,
-              borderWidth: 1,
-            }}
-          >
-            <Text style={{ color: green, fontSize: 18 }}>{item.icon}</Text>
-            <Text
-              style={{
-                color: ink,
-                fontWeight: "700",
-                fontSize: 22,
-                marginTop: 6,
-              }}
-            >
-              {item.n}
-            </Text>
-            <Text style={{ color: muted, fontSize: 10, marginTop: 3 }}>
-              {item.label}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      <View
-        style={{
-          backgroundColor: pale,
-          borderRadius: 15,
-          padding: 15,
-          marginBottom: 18,
-        }}
-      >
-        <Text style={{ color: green, fontWeight: "700", fontSize: 15 }}>
-          Today's Classes
-        </Text>
-        <Text style={{ color: ink, fontWeight: "700", marginTop: 12 }}>
-          8:00–10:00 AM · Mobile Programming
-        </Text>
-        <Text style={{ color: muted, fontSize: 12, marginTop: 3 }}>
-          IT 313 · BSIT 3A · Lab 2
-        </Text>
-        <View
-          style={{
-            height: 1,
-            backgroundColor: "#C5D7C3",
-            marginVertical: 10,
-          }}
-        />
-        <Text style={{ color: ink, fontWeight: "700" }}>
-          1:00–3:00 PM · Database Management
-        </Text>
-        <Text style={{ color: muted, fontSize: 12, marginTop: 3 }}>
-          IT 212 · BSIT 2B · Lab 1
-        </Text>
-      </View>
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 10,
-        }}
-      >
-        <Text style={{ color: ink, fontWeight: "700", fontSize: 17 }}>
-          Priority Tasks
-        </Text>
-        <TouchableOpacity onPress={() => setActiveTab("Tasks")}>
-          <Text style={{ color: green, fontSize: 12, fontWeight: "600" }}>
-            View all →
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {tasks
-        .filter((task) => task.status !== "Completed")
-        .slice(0, 2)
-        .map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-
-      <View style={card}>
-        <Text style={{ color: ink, fontWeight: "700" }}>
-          Weekly Workload Progress
-        </Text>
-        <View
-          style={{
-            height: 8,
-            borderRadius: 6,
-            backgroundColor: "#E9ECE6",
-            marginTop: 12,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              height: 8,
-              width: `${Math.min(
-                100,
-                Math.round(
-                  (completedCount / Math.max(tasks.length, 1)) * 100
-                )
-              )}%`,
-              backgroundColor: green,
-            }}
-          />
-        </View>
-        <Text style={{ color: muted, fontSize: 11, marginTop: 7 }}>
-          {completedCount} of {tasks.length} tasks completed
-        </Text>
-      </View>
-    </>
-  );
-
-  const renderSchedule = () => (
-    <>
-      <Header
-        title="Class Schedule"
-        subtitle="Your daily and weekly teaching agenda"
-      />
-
-      <View
-        style={{
-          backgroundColor: pale,
-          borderRadius: 13,
-          padding: 13,
-          marginBottom: 14,
-        }}
-      >
-        <Text style={{ color: green, fontWeight: "700" }}>
-          Monday · October 19
-        </Text>
-        <Text style={{ color: muted, fontSize: 12, marginTop: 4 }}>
-          2 classes scheduled today
-        </Text>
-      </View>
-
-      <View style={card}>
-        <Text style={{ color: muted, fontSize: 11 }}>
-          8:00 AM – 10:00 AM
-        </Text>
-        <Text
-          style={{
-            color: ink,
-            fontWeight: "700",
-            fontSize: 15,
-            marginTop: 5,
-          }}
-        >
-          Mobile Programming
-        </Text>
-        <Text style={{ color: muted, fontSize: 12, marginTop: 4 }}>
-          IT 313 · BSIT 3A · Lab 2
-        </Text>
-      </View>
-
-      <View style={card}>
-        <Text style={{ color: muted, fontSize: 11 }}>
-          1:00 PM – 3:00 PM
-        </Text>
-        <Text
-          style={{
-            color: ink,
-            fontWeight: "700",
-            fontSize: 15,
-            marginTop: 5,
-          }}
-        >
-          Database Management
-        </Text>
-        <Text style={{ color: muted, fontSize: 12, marginTop: 4 }}>
-          IT 212 · BSIT 2B · Lab 1
-        </Text>
-      </View>
-
-      <Text
-        style={{
-          color: muted,
-          fontSize: 12,
-          lineHeight: 19,
-          marginTop: 4,
-        }}
-      >
-        Schedule editing can be added next with a form for subject, day, time,
-        and room.
-      </Text>
-
-      <TouchableOpacity
-        style={[button, { marginTop: 14 }]}
-        onPress={() =>
-          Alert.alert(
-            "Add schedule",
-            "The schedule form is the next feature to connect. Your sample classes are shown above."
-          )
-        }
-      >
-        <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
-          ＋ Add Class Schedule
-        </Text>
-      </TouchableOpacity>
-    </>
-  );
-
-  const renderPreparation = () => (
-    <>
-      <Header
-        title="Lesson Preparation"
-        subtitle="Plan, organize, and track your teaching materials"
-      />
-
-      <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Search lesson tasks..."
-        placeholderTextColor="#9BA39C"
-        style={input}
-      />
-
-      {tasks
-        .filter((task) =>
-          `${task.title} ${task.subject} ${task.status}`
-            .toLowerCase()
-            .includes(search.toLowerCase())
-        )
-        .map((task) => (
-          <View key={task.id} style={card}>
-            <Text style={{ color: green, fontSize: 10, fontWeight: "700" }}>
-              LESSON PREPARATION
-            </Text>
-            <Text
-              style={{
-                color: ink,
-                fontWeight: "700",
-                fontSize: 15,
-                marginTop: 6,
-              }}
-            >
-              {task.title}
-            </Text>
-            <Text style={{ color: muted, fontSize: 12, marginTop: 4 }}>
-              {task.subject} · Due {task.due}
-            </Text>
-
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-              <SmallButton
-                label="Open lesson"
-                onPress={() =>
-                  Alert.alert(
-                    "Lesson notes",
-                    `Add lesson notes and resources for: ${task.title}`
-                  )
-                }
-              />
-              <SmallButton
-                label="Delete"
-                secondary
-                onPress={() =>
-                  setTasks((oldTasks) =>
-                    oldTasks.filter((item) => item.id !== task.id)
-                  )
-                }
-              />
-            </View>
-          </View>
-        ))}
-
-      <TouchableOpacity
-        style={button}
-        onPress={() => {
-          setActiveTab("Tasks");
-          setShowTaskForm(true);
-        }}
-      >
-        <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
-          ＋ Create Lesson Task
-        </Text>
-      </TouchableOpacity>
-    </>
-  );
-
-  const renderTasks = () => (
-    <>
-      <Header
-        title="My Tasks"
-        subtitle={`${pendingCount} remaining · ${completedCount} completed`}
-      />
-
-      <TextInput
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Search academic tasks"
-        placeholderTextColor="#9BA39C"
-        style={input}
-      />
-
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
-        <SmallButton label="All" onPress={() => setSearch("")} />
-        <SmallButton
-          label="Pending"
-          secondary
-          onPress={() => setSearch("Pending")}
-        />
-        <SmallButton
-          label="Completed"
-          secondary
-          onPress={() => setSearch("Completed")}
-        />
-      </View>
-
-      {visibleTasks.map((task) => (
-        <TaskCard key={task.id} task={task} />
-      ))}
-
-      {visibleTasks.length === 0 && (
-        <Text style={{ color: muted, textAlign: "center", padding: 20 }}>
-          No tasks found.
-        </Text>
-      )}
-
-      {showTaskForm ? (
-        <View style={card}>
-          <Text
-            style={{
-              color: ink,
-              fontSize: 17,
-              fontWeight: "700",
-              marginBottom: 14,
-            }}
-          >
-            Create Academic Task
-          </Text>
-
-          <Field
-            label="Task title"
-            value={taskTitle}
-            onChangeText={setTaskTitle}
-            placeholder="e.g. Prepare lesson slides"
-          />
-          <Field
-            label="Subject"
-            value={taskSubject}
-            onChangeText={setTaskSubject}
-            placeholder="Subject name"
-          />
-          <Field
-            label="Deadline"
-            value={taskDue}
-            onChangeText={setTaskDue}
-            placeholder="e.g. Oct 25, 2026"
-          />
-
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <SmallButton
-              label="Cancel"
-              secondary
-              onPress={() => setShowTaskForm(false)}
-            />
-            <SmallButton
-              label="Save Task"
-              onPress={() => {
-                if (!taskTitle.trim()) {
-                  Alert.alert("Missing title", "Please enter a task title.");
-                  return;
-                }
-
-                setTasks((oldTasks) => [
-                  {
-                    id: Date.now(),
-                    title: taskTitle.trim(),
-                    subject: taskSubject.trim() || "General",
-                    due: taskDue.trim() || "No deadline",
-                    status: "Pending",
-                  },
-                  ...oldTasks,
-                ]);
-
-                setTaskTitle("");
-                setTaskDue("Oct 25, 2026");
-                setShowTaskForm(false);
-                setSearch("");
-              }}
-            />
-          </View>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={[button, { marginTop: 6 }]}
-          onPress={() => setShowTaskForm(true)}
-        >
-          <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>
-            ＋ Add Task
-          </Text>
-        </TouchableOpacity>
-      )}
-    </>
-  );
-
-  const renderProfile = () => (
-    <>
-      <Header
-        title="Profile & Settings"
-        subtitle="Your personal teaching workspace"
-      />
-
-      <View
-        style={{
-          backgroundColor: pale,
-          borderRadius: 16,
-          padding: 17,
-          marginBottom: 14,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: green,
-            borderRadius: 30,
-            width: 52,
-            height: 52,
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 12,
-          }}
-        >
-          <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 18 }}>
-            {teacherName
-              .split(" ")
-              .map((name) => name[0])
-              .join("")
-              .slice(0, 2)}
-          </Text>
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: ink, fontWeight: "700", fontSize: 16 }}>
-            {teacherName}
-          </Text>
-          <Text style={{ color: muted, fontSize: 12, marginTop: 4 }}>
-            {email}
-          </Text>
-          <Text style={{ color: green, fontSize: 11, marginTop: 4 }}>
-            College Instructor
-          </Text>
-        </View>
-      </View>
-
-      <View style={card}>
-        <Text style={{ color: ink, fontWeight: "700", marginBottom: 12 }}>
-          Edit Profile
-        </Text>
-        <Field
-          label="Full name"
-          value={teacherName}
-          onChangeText={setTeacherName}
-          placeholder="Your full name"
-        />
-        <Field
-          label="Email address"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-        />
-        <SmallButton
-          label="Save Profile"
-          onPress={() =>
-            Alert.alert(
-              "Saved",
-              "Your profile changes are saved for this session."
-            )
-          }
-        />
-      </View>
-
-      <View
-        style={[
-          card,
-          {
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          },
-        ]}
-      >
-        <View style={{ flex: 1, paddingRight: 10 }}>
-          <Text style={{ color: ink, fontWeight: "700" }}>
-            Notifications & reminders
-          </Text>
-          <Text style={{ color: muted, fontSize: 11, marginTop: 4 }}>
-            Show reminders for deadlines
-          </Text>
-        </View>
-        <Switch
-          value={notificationsOn}
-          onValueChange={setNotificationsOn}
-          trackColor={{ true: green, false: "#C8CEC8" }}
-        />
-      </View>
-
-      <View style={card}>
-        <Text style={{ color: ink, fontWeight: "700" }}>
-          My Subjects · {subjects.length}
-        </Text>
-
-        {subjects.map((subject) => (
-          <View
-            key={subject.id}
-            style={{
-              paddingVertical: 10,
-              borderBottomColor: line,
-              borderBottomWidth: 1,
-            }}
-          >
-            <Text style={{ color: ink, fontWeight: "600" }}>
-              {subject.name}
-            </Text>
-            <Text style={{ color: muted, fontSize: 11, marginTop: 3 }}>
-              {subject.code} · {subject.section} · {subject.room}
-            </Text>
-          </View>
-        ))}
-
-        {showSubjectForm ? (
-          <>
-            <Field
-              label="Subject name"
-              value={subjectName}
-              onChangeText={setSubjectName}
-              placeholder="e.g. Web Development"
-            />
-            <Field
-              label="Course code"
-              value={subjectCode}
-              onChangeText={setSubjectCode}
-              placeholder="e.g. IT 315"
-            />
-            <Field
-              label="Section"
-              value={subjectSection}
-              onChangeText={setSubjectSection}
-              placeholder="e.g. BSIT 3A"
-            />
-
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <SmallButton
-                label="Cancel"
-                secondary
-                onPress={() => setShowSubjectForm(false)}
-              />
-              <SmallButton
-                label="Save Subject"
-                onPress={() => {
-                  if (!subjectName.trim() || !subjectCode.trim()) {
-                    Alert.alert(
-                      "Missing details",
-                      "Enter at least the subject name and course code."
-                    );
-                    return;
-                  }
-
-                  setSubjects((oldSubjects) => [
-                    ...oldSubjects,
-                    {
-                      id: Date.now(),
-                      name: subjectName.trim(),
-                      code: subjectCode.trim(),
-                      section: subjectSection.trim() || "No section",
-                      room: "Room not set",
-                    },
-                  ]);
-
-                  setSubjectName("");
-                  setSubjectCode("");
-                  setSubjectSection("");
-                  setShowSubjectForm(false);
-                }}
-              />
-            </View>
-          </>
-        ) : (
-          <TouchableOpacity
-            style={{
-              marginTop: 12,
-              padding: 12,
-              alignItems: "center",
-              borderRadius: 10,
-              backgroundColor: pale,
-            }}
-            onPress={() => setShowSubjectForm(true)}
-          >
-            <Text style={{ color: green, fontWeight: "700" }}>
-              ＋ Add Subject
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <TouchableOpacity
-        style={[
-          button,
-          {
-            backgroundColor: "#FFFFFF",
-            borderColor: line,
-            borderWidth: 1,
-          },
-        ]}
-        onPress={handleSignOut}
-      >
-        <Text style={{ color: green, fontWeight: "700" }}>Log Out</Text>
-      </TouchableOpacity>
-    </>
-  );
 
   if (!authChecked) {
     return (
@@ -1295,11 +458,161 @@ export default function App() {
           paddingBottom: 25,
         }}
       >
-        {activeTab === "Home" && renderHome()}
-        {activeTab === "Schedule" && renderSchedule()}
-        {activeTab === "Preparation" && renderPreparation()}
-        {activeTab === "Tasks" && renderTasks()}
-        {activeTab === "Profile" && renderProfile()}
+
+        {activeTab === "Home" && (
+  <HomeScreen
+    teacherName={teacherName}
+    subjects={subjects}
+    tasks={tasks}
+    pendingCount={pendingCount}
+    completedCount={completedCount}
+    onChangeTab={setActiveTab}
+    onToggleTaskStatus={(taskId) =>
+      setTasks((oldTasks) =>
+        oldTasks.map((item) =>
+          item.id === taskId
+            ? {
+                ...item,
+                status:
+                  item.status === "Pending"
+                    ? "In Progress"
+                    : "Completed",
+              }
+            : item
+        )
+      )
+    }
+    onDeleteTask={(taskId) =>
+      setTasks((oldTasks) =>
+        oldTasks.filter((item) => item.id !== taskId)
+      )
+    }
+  />
+)}
+
+       {activeTab === "Schedule" && <ScheduleScreen />}
+       
+       {activeTab === "Preparation" && (
+  <PreparationScreen
+    tasks={tasks}
+    search={search}
+    onSearchChange={setSearch}
+    onChangeTab={setActiveTab}
+    onDeleteTask={(taskId) =>
+      setTasks((oldTasks) =>
+        oldTasks.filter((item) => item.id !== taskId)
+      )
+    }
+  />
+)}
+       {activeTab === "Tasks" && (
+  <TasksScreen
+    visibleTasks={visibleTasks}
+    pendingCount={pendingCount}
+    completedCount={completedCount}
+    search={search}
+    onSearchChange={setSearch}
+    showTaskForm={showTaskForm}
+    taskTitle={taskTitle}
+    taskSubject={taskSubject}
+    taskDue={taskDue}
+    onTaskTitleChange={setTaskTitle}
+    onTaskSubjectChange={setTaskSubject}
+    onTaskDueChange={setTaskDue}
+    onToggleTaskStatus={(taskId) =>
+      setTasks((oldTasks) =>
+        oldTasks.map((item) =>
+          item.id === taskId
+            ? {
+                ...item,
+                status:
+                  item.status === "Pending"
+                    ? "In Progress"
+                    : "Completed",
+              }
+            : item
+        )
+      )
+    }
+    onDeleteTask={(taskId) =>
+      setTasks((oldTasks) =>
+        oldTasks.filter((item) => item.id !== taskId)
+      )
+    }
+    onCancelTaskForm={() => setShowTaskForm(false)}
+    onShowTaskForm={() => setShowTaskForm(true)}
+    onSaveTask={() => {
+      if (!taskTitle.trim()) {
+        Alert.alert("Missing title", "Please enter a task title.");
+        return;
+      }
+
+      setTasks((oldTasks) => [
+        {
+          id: Date.now(),
+          title: taskTitle.trim(),
+          subject: taskSubject.trim() || "General",
+          due: taskDue.trim() || "No deadline",
+          status: "Pending",
+        },
+        ...oldTasks,
+      ]);
+
+      setTaskTitle("");
+      setTaskDue("Oct 25, 2026");
+      setShowTaskForm(false);
+      setSearch("");
+    }}
+  />
+)}
+
+        {activeTab === "Profile" && (
+  <ProfileScreen
+    teacherName={teacherName}
+    email={email}
+    onTeacherNameChange={setTeacherName}
+    onEmailChange={setEmail}
+    notificationsOn={notificationsOn}
+    onNotificationsChange={setNotificationsOn}
+    subjects={subjects}
+    showSubjectForm={showSubjectForm}
+    subjectName={subjectName}
+    subjectCode={subjectCode}
+    subjectSection={subjectSection}
+    onSubjectNameChange={setSubjectName}
+    onSubjectCodeChange={setSubjectCode}
+    onSubjectSectionChange={setSubjectSection}
+    onShowSubjectForm={() => setShowSubjectForm(true)}
+    onCancelSubjectForm={() => setShowSubjectForm(false)}
+    onSaveSubject={() => {
+      if (!subjectName.trim() || !subjectCode.trim()) {
+        Alert.alert(
+          "Missing details",
+          "Enter at least the subject name and course code."
+        );
+        return;
+      }
+
+      setSubjects((oldSubjects) => [
+        ...oldSubjects,
+        {
+          id: Date.now(),
+          name: subjectName.trim(),
+          code: subjectCode.trim(),
+          section: subjectSection.trim() || "No section",
+          room: "Room not set",
+        },
+      ]);
+
+      setSubjectName("");
+      setSubjectCode("");
+      setSubjectSection("");
+      setShowSubjectForm(false);
+    }}
+    onSignOut={handleSignOut}
+  />
+)}
+
       </ScrollView>
 
       <View
